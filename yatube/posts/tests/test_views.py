@@ -1,11 +1,9 @@
 import shutil
 import tempfile
-from turtle import position
 
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.test import override_settings
@@ -81,12 +79,12 @@ class PostsContextTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         small_gif = (            
-             b'\x47\x49\x46\x38\x39\x61\x02\x00'
-             b'\x01\x00\x80\x00\x00\x00\x00\x00'
-             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-             b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-             b'\x0A\x00\x3B'
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
         )
         uploaded = SimpleUploadedFile(
             name='small.gif',
@@ -120,7 +118,7 @@ class PostsContextTests(TestCase):
                     group=cls.group_1,
                     image=uploaded,
                 )
-            
+
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -221,7 +219,10 @@ class PostsContextTests(TestCase):
         for testing_post in Post.objects.filter(author=self.user_2):
             with self.subTest(post=testing_post.pk):
                 response = self.auth_user_2.get(
-                    reverse('posts:post_edit', kwargs={'post_id': testing_post.pk})
+                    reverse(
+                        'posts:post_edit',
+                        kwargs={'post_id': testing_post.pk}
+                    )
                 )
                 text_initial = response.context['form'].initial['text']
                 group_initial = response.context['form'].initial['group']
@@ -278,7 +279,7 @@ class CommentsViewsTest(TestCase):
             text='Тестовый пост',
             author=cls.user,
         )
-    
+
     def setUp(self):
         self.auth_user = Client()
         self.auth_user.force_login(self.user)
@@ -286,7 +287,8 @@ class CommentsViewsTest(TestCase):
     def test_auth_users_comment_access(self):
         """Комментарий могут оставить авторизованные пользователи."""
         comments_total = Comment.objects.count()
-        request = reverse('posts:add_comment', kwargs={'post_id': self.post.pk})
+        request = reverse(
+            'posts:add_comment', kwargs={'post_id': self.post.pk})
         form_data = {
             'text': 'Текст комментария',
         }
@@ -300,7 +302,8 @@ class CommentsViewsTest(TestCase):
     def test_users_comment_access(self):
         """Неавторизованные пользователи не оставляют комментарий."""
         comments_total = Comment.objects.count()
-        request = reverse('posts:add_comment', kwargs={'post_id': self.post.pk})
+        request = reverse(
+            'posts:add_comment', kwargs={'post_id': self.post.pk})
         form_data = {
             'text': 'Текст комментария',
         }
@@ -314,11 +317,12 @@ class CommentsViewsTest(TestCase):
     def test_comment_exists_on_post_detail_page(self):
         """Комментарий отображается на странице поста."""
         first_comment = Comment.objects.create(
-                            text='Тестовый комментарий',
-                            author=self.user,
-                            post=self.post,
-                        )
-        request = reverse('posts:post_detail', kwargs={'post_id': self.post.pk})
+            text='Тестовый комментарий',
+            author=self.user,
+            post=self.post,
+        )
+        request = reverse(
+            'posts:post_detail', kwargs={'post_id': self.post.pk})
         response = self.auth_user.get(request)
         for comment in response.context['page_obj']:
             with self.subTest(comment=comment):
@@ -337,7 +341,7 @@ class CacheTest(TestCase):
         self.auth_user = Client()
         self.auth_user.force_login(self.user)
         self.post = Post.objects.create(
-            text=f'Текст поста',
+            text='Текст поста',
             author=self.user,
         )
 

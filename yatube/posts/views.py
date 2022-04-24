@@ -34,7 +34,7 @@ def profile(request, username):
         following = Follow.objects.filter(
             user=request.user,
             author=User.objects.get(username=username),
-            ).exists()
+        ).exists()
     else:
         following = False
     context = {
@@ -106,7 +106,7 @@ def add_comment(request, post_id):
 @login_required
 def follow_index(request):
     user = request.user
-    authors = []               # Мне не нравится, но по-другому пока не придумал
+    authors = []   # Мне не нравится, но по-другому пока не придумал
     for follow in user.follower.all():
         authors.append(follow.author)
     post_list = Post.objects.filter(author__in=authors)
