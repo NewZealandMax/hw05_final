@@ -320,7 +320,6 @@ class CacheTest(TestCase):
         self.post.delete()
         cache_response = self.client.get(reverse('posts:index'))
         self.assertEqual(response.content, cache_response.content)
-        
 
     def test_index_cache_clear_correct(self):
         """Кэш очищается корректно."""
@@ -329,7 +328,9 @@ class CacheTest(TestCase):
         cache_response = self.client.get(reverse('posts:index'))
         cache.clear()
         clear_cache_response = self.client.get(reverse('posts:index'))
-        self.assertNotEqual(cache_response.content, clear_cache_response.content)
+        self.assertNotEqual(
+            cache_response.content, clear_cache_response.content
+        )
 
 
 class FollowTest(TestCase):
@@ -359,7 +360,10 @@ class FollowTest(TestCase):
     def test_auth_user_follow(self):
         """Авторизлованный пользователь может подписаться на автора."""
         self.auth_user_1.get(
-            reverse('posts:profile_follow', kwargs={'username': self.user_2.username})
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.user_2.username}
+            )
         )
         following = Follow.objects.filter(user=self.user_1, author=self.user_2)
         self.assertTrue(following.exists())
@@ -372,7 +376,10 @@ class FollowTest(TestCase):
         )
         following = Follow.objects.filter(user=self.user_1, author=self.user_2)
         self.auth_user_1.get(
-            reverse('posts:profile_unfollow', kwargs={'username': self.user_2.username})
+            reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': self.user_2.username}
+            )
         )
         self.assertFalse(following.exists())
 
