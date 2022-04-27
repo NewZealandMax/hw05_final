@@ -7,10 +7,10 @@ from .utils import paginator
 
 
 def index(request):
-    post_list = Post.objects.all()
+    post_list = Post.objects.select_related('group').all()
     page_obj = paginator(post_list, request)
     context = {
-        'page_obj': page_obj
+        'page_obj': page_obj,
     }
     return render(request, 'posts/index.html', context)
 
@@ -106,10 +106,7 @@ def add_comment(request, post_id):
 @login_required
 def follow_index(request):
     user = request.user
-    authors = []   # Мне не нравится, но по-другому пока не придумал
-    for follow in user.follower.all():
-        authors.append(follow.author)
-    post_list = Post.objects.filter(author__in=authors)
+    post_list = Post.objects.filter(author__following__user=user)
     page_obj = paginator(post_list, request)
     context = {
         'page_obj': page_obj,
@@ -119,14 +116,9 @@ def follow_index(request):
 
 @login_required
 def profile_follow(request, username):
-    if request.user.username == username:
+    if request.user.pk == User.objects.get(username=username).pk:
         return redirect('posts:profile', username=username)
-    if Follow.objects.filter(
-        user=request.user,
-        author=User.objects.get(username=username),
-    ).exists():
-        return redirect('posts:profile', username=username)
-    Follow.objects.create(
+    Follow.objects.get_or_create(
         user=request.user,
         author=User.objects.get(username=username),
     )
@@ -137,6 +129,6 @@ def profile_follow(request, username):
 def profile_unfollow(request, username):
     Follow.objects.filter(
         user=request.user,
-        author=User.objects.get(username=username),
+        author=get_object_or_404(User, username=username),
     ).delete()
     return redirect('posts:profile', username=username)

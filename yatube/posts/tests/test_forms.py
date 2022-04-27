@@ -8,7 +8,7 @@ from django.test import Client, TestCase
 from django.test import override_settings
 from django.urls import reverse
 
-from ..models import Group, Post
+from ..models import Comment, Group, Post
 
 
 User = get_user_model()
@@ -75,6 +75,7 @@ class PostsCreateFormTest(TestCase):
         )
         sorted_posts = Post.objects.order_by('-id')
         new_post = sorted_posts[0]
+        picture = f'posts/{uploaded}'
         self.assertRedirects(
             response,
             reverse('posts:profile', kwargs={'username': self.user.username}))
@@ -82,7 +83,7 @@ class PostsCreateFormTest(TestCase):
         self.assertEqual(new_post.text, form_data['text'])
         self.assertEqual(new_post.group.pk, form_data['group'])
         self.assertEqual(new_post.author, self.user)
-        self.assertEqual(new_post.image, 'posts/small.gif')
+        self.assertEqual(new_post.image, picture)
 
     def test_post_edit_form(self):
         """Пост корректно отредактирован с помощью формы."""
@@ -103,3 +104,48 @@ class PostsCreateFormTest(TestCase):
         self.assertEqual(Post.objects.count(), posts_count)
         self.assertEqual(edited_post.text, form_data['text'])
         self.assertEqual(edited_post.group.pk, form_data['group'])
+
+
+class CommentsFormTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='NewUser')
+        cls.post = Post.objects.create(
+            text='Тестовый пост',
+            author=cls.user,
+        )
+
+    def setUp(self):
+        self.auth_user = Client()
+        self.auth_user.force_login(self.user)
+
+    def test_auth_users_comment_access(self):
+        """Комментарий могут оставить авторизованные пользователи."""
+        comments_total = Comment.objects.count()
+        request = reverse(
+            'posts:add_comment', kwargs={'post_id': self.post.pk})
+        form_data = {
+            'text': 'Текст комментария',
+        }
+        self.auth_user.post(
+            request,
+            data=form_data,
+            follow=True,
+        )
+        self.assertEqual(Comment.objects.count(), comments_total + 1)
+
+    def test_users_comment_access(self):
+        """Неавторизованные пользователи не оставляют комментарий."""
+        comments_total = Comment.objects.count()
+        request = reverse(
+            'posts:add_comment', kwargs={'post_id': self.post.pk})
+        form_data = {
+            'text': 'Текст комментария',
+        }
+        self.client.post(
+            request,
+            data=form_data,
+            follow=True,
+        )
+        self.assertEqual(Comment.objects.count(), comments_total)

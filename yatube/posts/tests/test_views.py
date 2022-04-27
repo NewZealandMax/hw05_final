@@ -4,6 +4,7 @@ import tempfile
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.test import override_settings
@@ -284,36 +285,6 @@ class CommentsViewsTest(TestCase):
         self.auth_user = Client()
         self.auth_user.force_login(self.user)
 
-    def test_auth_users_comment_access(self):
-        """Комментарий могут оставить авторизованные пользователи."""
-        comments_total = Comment.objects.count()
-        request = reverse(
-            'posts:add_comment', kwargs={'post_id': self.post.pk})
-        form_data = {
-            'text': 'Текст комментария',
-        }
-        self.auth_user.post(
-            request,
-            data=form_data,
-            follow=True,
-        )
-        self.assertEqual(Comment.objects.count(), comments_total + 1)
-
-    def test_users_comment_access(self):
-        """Неавторизованные пользователи не оставляют комментарий."""
-        comments_total = Comment.objects.count()
-        request = reverse(
-            'posts:add_comment', kwargs={'post_id': self.post.pk})
-        form_data = {
-            'text': 'Текст комментария',
-        }
-        self.client.post(
-            request,
-            data=form_data,
-            follow=True,
-        )
-        self.assertEqual(Comment.objects.count(), comments_total)
-
     def test_comment_exists_on_post_detail_page(self):
         """Комментарий отображается на странице поста."""
         first_comment = Comment.objects.create(
@@ -338,8 +309,6 @@ class CacheTest(TestCase):
         cls.user = User.objects.create_user(username='NewUser')
 
     def setUp(self):
-        self.auth_user = Client()
-        self.auth_user.force_login(self.user)
         self.post = Post.objects.create(
             text='Текст поста',
             author=self.user,
@@ -347,10 +316,20 @@ class CacheTest(TestCase):
 
     def test_index_cache_has_correct_data(self):
         """Кэш главной страницы отображает корректные данные."""
-        response_1 = self.auth_user.get(reverse('posts:index'))
+        response = self.client.get(reverse('posts:index'))
         self.post.delete()
-        response_2 = self.auth_user.get(reverse('posts:index'))
-        self.assertEqual(response_1.content, response_2.content)
+        cache_response = self.client.get(reverse('posts:index'))
+        self.assertEqual(response.content, cache_response.content)
+        
+
+    def test_index_cache_clear_correct(self):
+        """Кэш очищается корректно."""
+        self.client.get(reverse('posts:index'))
+        self.post.delete()
+        cache_response = self.client.get(reverse('posts:index'))
+        cache.clear()
+        clear_cache_response = self.client.get(reverse('posts:index'))
+        self.assertNotEqual(cache_response.content, clear_cache_response.content)
 
 
 class FollowTest(TestCase):
@@ -377,15 +356,24 @@ class FollowTest(TestCase):
         self.auth_user_2 = Client()
         self.auth_user_2.force_login(self.user_2)
 
-    def test_user_follow(self):
-        """Подписка и отписка работают корректно."""
+    def test_auth_user_follow(self):
+        """Авторизлованный пользователь может подписаться на автора."""
+        self.auth_user_1.get(
+            reverse('posts:profile_follow', kwargs={'username': self.user_2.username})
+        )
+        following = Follow.objects.filter(user=self.user_1, author=self.user_2)
+        self.assertTrue(following.exists())
+
+    def test_auth_user_unfollow(self):
+        """Авторизованный пользователь может отписаться от автора."""
         Follow.objects.create(
             user=self.user_1,
             author=self.user_2,
         )
         following = Follow.objects.filter(user=self.user_1, author=self.user_2)
-        self.assertTrue(following.exists())
-        following.delete()
+        self.auth_user_1.get(
+            reverse('posts:profile_unfollow', kwargs={'username': self.user_2.username})
+        )
         self.assertFalse(following.exists())
 
     def test_followings_have_correct_data(self):
