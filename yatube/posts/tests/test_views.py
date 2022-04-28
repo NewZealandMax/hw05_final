@@ -314,18 +314,12 @@ class CacheTest(TestCase):
             author=self.user,
         )
 
-    def test_index_cache_has_correct_data(self):
-        """Кэш главной страницы отображает корректные данные."""
+    def test_index_cache_has_correct_data_and_clear(self):
+        """Кэш создаётся и очищается корректно."""
         response = self.client.get(reverse('posts:index'))
         self.post.delete()
         cache_response = self.client.get(reverse('posts:index'))
         self.assertEqual(response.content, cache_response.content)
-
-    def test_index_cache_clear_correct(self):
-        """Кэш очищается корректно."""
-        self.client.get(reverse('posts:index'))
-        self.post.delete()
-        cache_response = self.client.get(reverse('posts:index'))
         cache.clear()
         clear_cache_response = self.client.get(reverse('posts:index'))
         self.assertNotEqual(

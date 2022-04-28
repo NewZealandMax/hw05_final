@@ -133,7 +133,12 @@ class CommentsFormTest(TestCase):
             data=form_data,
             follow=True,
         )
+        sorted_comments = Comment.objects.filter(post=self.post).order_by('-id')
+        last_comment = sorted_comments[0]
         self.assertEqual(Comment.objects.count(), comments_total + 1)
+        self.assertEqual(last_comment.post, self.post)
+        self.assertEqual(last_comment.author, self.user)
+        self.assertEqual(last_comment.text, form_data['text'])
 
     def test_users_comment_access(self):
         """Неавторизованные пользователи не оставляют комментарий."""
