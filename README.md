@@ -1,3 +1,22 @@
-# hw05_final
+## Социальная сеть Yatube
 
-[![CI](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml/badge.svg?branch=master)](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml)
+### Описание проекта:
+Платформа, на которой пользователи могут регистрироваться, публиковать свои посты с картинками и редактировать их, читать записи других пользователей, оставлять комментарии
+
+### Запуск проекта
+```
+python manage.py runserver
+```
+Приложение доступно по адресу: http://127.0.0.1:8000
+
+### Версия языка
+`Python 3.9.2`
+
+Зависимости представлены в файле `requirements.txt`
+
+### Стек технологий
+`Django`
+
+### Автор проекта
+_Max Stepanov_  
+_GitHub: NewZealandMax_
